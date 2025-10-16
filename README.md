@@ -31,29 +31,29 @@ A multi-agent document processing framework. It ingests plain-text/Markdown docu
 
 ```mermaid
 flowchart LR
-    subgraph Store[Shared Memory Store (JSON/SQLite)]
-      S1[(documents)]
-      S2[(analyses)]
-      S3[(decisions)]
-      S4[(logs)]
-    end
+  subgraph Shared Memory Store
+    S1[(documents)]
+    S2[(analyses)]
+    S3[(decisions)]
+    
+  end
 
-    R[Reader Agent] -->|ParsedDocument| S1
-    A[Analyzer Agent] -->|DocAnalysis| S2
-    D[Decision Agent] -->|Decision + Reflection| S3
-    D -->|Trace & Metrics| S4
+  R[Reader Agent] -->|ParsedDocument| S1
+  A[Analyzer Agent] -->|DocAnalysis| S2
+  D[Decision Agent] -->|Decision + Reflection| S3
 
-    R -->|title, key_findings, sections| A
-    A -->|multi-doc synthesis| D
 
-    subgraph CLI
-      M[agent-cli / reader-cli]
-    end
+  R -->|title, key_findings, sections| A
+  A -->|multi-doc synthesis| D
 
-    M --> R
-    M --> A
-    M --> D
-    D -->|Original → Reflect → Revised| M
+  subgraph CLI
+    M[agent-cli / reader-cli]
+  end
+
+  M --> R
+  M --> A
+  M --> D
+  D -->|Original → Reflect → Revised| M
 ```
 
 ### Data Models (simplified)
