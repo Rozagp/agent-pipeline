@@ -124,7 +124,7 @@ class DecisionAgent:
         else:
             result = self._answer_heuristic(context, question)
 
-        # ========== Reflection loop (per-doc) ==========
+        # Reflection loop (per-doc)
         if self.cfg.reflect:
             refl_log = self._reflect_result(store, [doc_id], context, question, result)
             # replace final answer with revised version
@@ -137,7 +137,7 @@ class DecisionAgent:
             result["store_error"] = str(e)
         return result
 
-    # ---------- Public (corpus) ----------
+    # Public (corpus) 
     def ask_corpus(self, store, doc_ids: List[str], question: str, *, plain: bool = True) -> str:
         out = self.answer_corpus(store, doc_ids, question)
         if plain:
@@ -155,7 +155,7 @@ class DecisionAgent:
         else:
             result = self._answer_heuristic_corpus(merged, question)
 
-        # ========== Reflection loop (corpus) ==========
+        # Reflection loop (corpus)
         if self.cfg.reflect:
             refl_log = self._reflect_result(store, doc_ids, merged, question, result)
             revised = refl_log.get("final_revised_answer") or result.get("answer")
@@ -168,7 +168,7 @@ class DecisionAgent:
             result["store_error"] = str(e)
         return result
 
-    # ---------- Context gathering ----------
+    # Context gathering 
     def _gather_context(self, store, doc_id: str) -> Dict[str, Any]:
         doc = self._safe_get_document(store, doc_id)
         analyses = self._safe_get_analyses(store, doc_id)
@@ -242,7 +242,7 @@ class DecisionAgent:
             "timestamp": int(time.time() * 1000),
         }
 
-    # ---------- LLM answers ----------
+    # LLM answers
     def _answer_with_llm(self, ctx: Dict[str, Any], question: str) -> Dict[str, Any]:
         system = (
             "You are a Decision Agent. Answer a high-level question using only the supplied analyses. "
@@ -275,7 +275,7 @@ class DecisionAgent:
         out = self._llm.chat_json(system, user)
         return self._normalize_corpus(out, source)
 
-    # ---------- Heuristic answers (no LLM) ----------
+    # Heuristic answers (no LLM) 
     def _answer_heuristic(self, ctx: Dict[str, Any], question: str) -> Dict[str, Any]:
         text = ctx.get("context_text", "")
         has_contra = ("contradiction" in text.lower()) or ("[contradictions]" in text.lower())
@@ -314,7 +314,7 @@ class DecisionAgent:
             "confidence": "medium" if (has_critical or has_contra) else "low",
         }
 
-    # ---------- Reflection ----------
+    # Reflection 
     def _reflect_result(
         self,
         store,
@@ -406,7 +406,7 @@ class DecisionAgent:
             return f"{core} Grounding evidence: {ev}.{hint}"
         return core + hint
 
-    # ---------- Normalizers ----------
+    # Normalizers
     def _normalize_single(self, out: Dict[str, Any], ctx: Dict[str, Any]) -> Dict[str, Any]:
         def _as_list(v):
             if v is None: return []
@@ -453,7 +453,7 @@ class DecisionAgent:
             "confidence": conf,
         }
 
-    # ---------- Store helpers ----------
+    # Store helpers
     def _safe_get_document(self, store, doc_id: str) -> Dict[str, Any]:
         try:
             return store.get_document(doc_id) or {}

@@ -24,9 +24,9 @@ from typing import Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field
 
-# =========================
+
 # Data Models
-# =========================
+
 
 class DocMeta(BaseModel):
     title: str = Field(..., description="Detected document title")
@@ -41,9 +41,7 @@ class ParsedDocument(BaseModel):
     meta: DocMeta
     sections: Dict[str, str]
 
-# =========================
 # OpenAI-compatible LLM (optional)
-# =========================
 
 @dataclass
 class LLMConfig:
@@ -113,9 +111,7 @@ class OpenAICompatLLM:
             print(f"[LLM] Extraction failed: {e}")
             return None
 
-# =========================
 # Reader Agent (heuristics + optional LLM refinement)
-# =========================
 
 @dataclass
 class ReaderConfig:
@@ -137,7 +133,7 @@ class ReaderAgent:
         self.llm_cfg = llm_cfg or LLMConfig()
         self.llm = OpenAICompatLLM(self.llm_cfg) if self.llm_cfg.enabled() else None
 
-    # ---- Public API ----
+    # Public API 
     def parse(self, path: Path, *, use_llm: bool = False) -> ParsedDocument:
         text = self._load_text(path)
         text = self._normalize_newlines(text)
@@ -180,7 +176,7 @@ class ReaderAgent:
         tokens = self._rough_token_count(plain)
         return ParsedDocument(id=doc_id, path=str(path), tokens=tokens, meta=meta, sections=sections)
 
-    # ---- Loading & cleaning ----
+    # Loading & cleaning
     def _load_text(self, path: Path) -> str:
         if not path.exists() or not path.is_file():
             raise FileNotFoundError(path)

@@ -7,7 +7,7 @@ import os
 import requests
 
 try:
-    from Core.memory_store import MemoryStore  
+    from core.memory_store import MemoryStore  
 except Exception:
     MemoryStore = object  # fallback for type hints
 
@@ -240,7 +240,7 @@ class OpenAIAnalyzerAgent:
             },
         }
 
-    def analyze_doc(self, store: MemoryStore, doc_id: str, task: Optional[str] = None) -> Dict[str, Any]:
+    def analyze_doc(self, store: MemoryStore, doc_id: str, task: Optional[str] = None) -> Dict[str, Any]: # type: ignore
         # Loads the parsed document from the shared store, analyze it, and
         # persists the analysis back to the store. Returns the analysis dict.
         stored_doc = store.get_document(doc_id)
