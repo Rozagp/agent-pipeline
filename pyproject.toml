@@ -1,0 +1,27 @@
+[project]
+name = "agent-pipeline"
+version = "0.1.0"
+description = "Multi-agent doc pipeline: Reader → Analyzer → Decision with reflection and shared store."
+requires-python = ">=3.10"
+dependencies = [
+  "pydantic>=2.7",
+  "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0"
+]
+
+[project.scripts]
+agent-cli = "agents.cli:main"
+reader-cli = "agents.reader_agent:_cli"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agents*", "core*", "data_store*"]
+exclude = ["tests*", "docs*"]

@@ -1,0 +1,3 @@
+[console_scripts]
+agent-cli = agents.cli:main
+reader-cli = agents.reader_agent:_cli

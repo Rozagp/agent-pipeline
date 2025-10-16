@@ -1,0 +1,5 @@
+pydantic>=2.7
+python-dotenv>=1.0
+
+[dev]
+pytest>=8.0
