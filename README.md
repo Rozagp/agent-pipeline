@@ -35,13 +35,13 @@ flowchart LR
     S1[(documents)]
     S2[(analyses)]
     S3[(decisions)]
-    S4[(logs)]
+    
   end
 
   R[Reader Agent] -->|ParsedDocument| S1
   A[Analyzer Agent] -->|DocAnalysis| S2
   D[Decision Agent] -->|Decision + Reflection| S3
-  D -->|Trace & Metrics| S4
+
 
   R -->|title, key_findings, sections| A
   A -->|multi-doc synthesis| D
