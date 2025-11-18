@@ -28,8 +28,6 @@ from agents.LLMconfig import OpenAICompatLLM
 
 
 # Data Models
-
-
 class DocMeta(BaseModel):
     title: str = Field(..., description="Detected document title")
     key_findings: List[str] = Field(default_factory=list, description="3–7 concise bullets")
@@ -43,9 +41,6 @@ class ParsedDocument(BaseModel):
     meta: DocMeta
     sections: Dict[str, str]
 
-# OpenAI-compatible LLM (optional)
-
-    
 
 @dataclass
 class ReaderConfig:

@@ -3,85 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 import json, os, re, time
+from agents.LLMconfig import LLMConfig
+from agents.LLMconfig import OpenAICompatLLM
 
-
-# Minimal OpenAI-compatible client (env-driven)
-@dataclass
-class _LLMConfig:
-    api_key: Optional[str]
-    base_url: str
-    model: str
-    timeout: int
-
-    @classmethod
-    def from_env(cls) -> "_LLMConfig":
-        def _clean(v: Optional[str], default: Optional[str] = None) -> str:
-            if v is None or v == "":
-                return (default or "").strip()
-            v = v.strip().strip("'").strip('"')
-            return v
-
-        base = _clean(os.getenv("OPENAI_BASE_URL"), "https://api.openai.com/v1")
-        if base and not re.match(r"^https?://", base, flags=re.I):
-            base = "https://" + base.lstrip("/")
-        base = base.rstrip("/")
-
-        return cls(
-            api_key=_clean(os.getenv("OPENAI_API_KEY")),
-            base_url=base,
-            model=_clean(os.getenv("OPENAI_MODEL"), "gpt-4.1-mini"),
-            timeout=int(_clean(os.getenv("OPENAI_TIMEOUT"), "60") or "60"),
-        )
-
-    def ready(self) -> bool:
-        return bool(self.api_key and self.base_url)
-
-
-class _OpenAICompat:
-    """Tiny /chat/completions JSON client (no external deps)."""
-    def __init__(self, cfg: _LLMConfig) -> None:
-        import urllib.request, urllib.error  # lazy import
-        self._cfg = cfg
-        self._http = urllib.request
-        self._err = urllib.error
-
-    def chat_json(self, system: str, user: str) -> Dict[str, Any]:
-        if not self._cfg.ready():
-            raise RuntimeError("Missing OPENAI_API_KEY or OPENAI_BASE_URL (DecisionAgent)")
-
-        url = f"{self._cfg.base_url}/chat/completions"
-        payload = {
-            "model": self._cfg.model,
-            "temperature": 0.0,
-            "response_format": {"type": "json_object"},
-            "messages": [
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-        }
-
-        req = self._http.Request(url, method="POST")
-        req.add_header("Authorization", f"Bearer {self._cfg.api_key}")
-        req.add_header("Content-Type", "application/json")
-        data = json.dumps(payload).encode("utf-8")
-        try:
-            with self._http.urlopen(req, data=data, timeout=self._cfg.timeout) as resp:
-                raw = resp.read().decode("utf-8")
-            obj = json.loads(raw)
-            content = obj["choices"][0]["message"]["content"]
-            return json.loads(content)
-        except self._err.HTTPError as e:
-            body = e.read().decode("utf-8", errors="ignore")
-            raise RuntimeError(f"OpenAI HTTP {e.code}: {body} (url={url})") from e
-        except self._err.URLError as e:
-            raise RuntimeError(f"OpenAI URL error: {e} (url={url})") from e
-        except Exception as e:
-            raise RuntimeError(f"OpenAI request failed: {e} (url={url})") from e
-
-
-# =========================
-# Decision Agent
-# =========================
 
 @dataclass
 class DecisionConfig:
@@ -103,8 +27,8 @@ class DecisionAgent:
 
     def __init__(self, cfg: Optional[DecisionConfig] = None) -> None:
         self.cfg = cfg or DecisionConfig()
-        self._llm_cfg = _LLMConfig.from_env()
-        self._llm = _OpenAICompat(self._llm_cfg)
+        self._llm_cfg = LLMConfig.from_env()
+        self._llm = OpenAICompatLLM(self._llm_cfg)
 
     # ---------- Public (per-document) ----------
     def ask(self, store, doc_id: str, question: str, *, plain: bool = True) -> str:
