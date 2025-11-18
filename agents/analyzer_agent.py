@@ -5,81 +5,14 @@ from typing import Any, Dict, Optional
 import json
 import os
 import requests
+from agents.LLMconfig import LLMConfig, OpenAICompatLLM
 
 try:
     from core.memory_store import MemoryStore  
 except Exception:
     MemoryStore = object  # fallback for type hints
 
-# OpenAI-compatible minimal client (env-only)
-@dataclass
-class LLMConfig:
-    api_key: Optional[str]
-    base_url: str
-    model: str
-    timeout: int
 
-    @classmethod
-    def from_env(cls) -> "LLMConfig":
-        return cls(
-            api_key=os.getenv("OPENAI_API_KEY"),
-            base_url=os.getenv("OPENAI_BASE_URL", "https://api.avalai.ir/v1"),
-            model=os.getenv("OPENAI_MODEL", "gpt-4.1-mini"),
-            timeout=int(os.getenv("OPENAI_TIMEOUT", "60")),
-        )
-
-    def ensure_ready(self) -> None:
-        if not self.api_key:
-            raise RuntimeError("Missing OPENAI_API_KEY (set in environment or .env).")
-
-
-class OpenAICompat:
-    #OpenAI /chat/completions client using urllib
-    def __init__(self, cfg: LLMConfig) -> None:
-        self._cfg = cfg
-
-    def chat_json(self, system: str, user: str) -> Dict[str, Any]:
-        self._cfg.ensure_ready()
-        url = self._cfg.base_url.rstrip("/") + "/chat/completions"
-
-        payload = {
-            "model": self._cfg.model,
-            "temperature": 0.2, 
-            "response_format": {"type": "json_object"},
-            "messages": [
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-        }
-
-        headers = {
-            "Authorization": f"Bearer {self._cfg.api_key}",
-            "Content-Type": "application/json",
-        }
-
-        try:
-            resp = requests.post(
-                url,
-                headers=headers,
-                json=payload,                   
-                timeout=self._cfg.timeout
-            )
-            resp.raise_for_status()
-            obj = resp.json()
-            content = obj["choices"][0]["message"]["content"]
-            return json.loads(content)
-        except requests.HTTPError as e:
-            # Include server body for debugging
-            body = getattr(e.response, "text", "")
-            code = getattr(e.response, "status_code", "unknown")
-            raise RuntimeError(f"OpenAI HTTP {code}: {body}") from e
-        except requests.RequestException as e:
-            # Network / timeout / connection errors
-            raise RuntimeError(f"OpenAI request failed: {e}") from e
-        except (KeyError, ValueError, json.JSONDecodeError) as e:
-            # Malformed or unexpected payload
-            raw = resp.text if 'resp' in locals() else ''
-            raise RuntimeError(f"OpenAI response parsing failed: {e}. Raw: {raw}") from e
 
 # Analyzer (env-only) with shared-memory helpers
 @dataclass
@@ -105,7 +38,8 @@ class OpenAIAnalyzerAgent:
     def __init__(self, cfg: Optional[AnalyzerConfig] = None) -> None:
         self.cfg = cfg or AnalyzerConfig()
         self.llm_cfg = LLMConfig.from_env()
-        self.llm = OpenAICompat(self.llm_cfg)
+        self.llm = OpenAICompatLLM(self.llm_cfg)
+
 
     # Prompt helpers (Considered these 3 as the main 3 categories)
     def _task_instruction(self, task: str) -> str:
